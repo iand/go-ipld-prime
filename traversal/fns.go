@@ -10,14 +10,19 @@ import (
 //  plus a few of the parameters they'll need to receieve.
 //--------------------------------------------------------
 
-// VisitFn is a read-only visitor.
-type VisitFn func(Progress, ipld.Node) error
+// VisitFn is a read-only visitor. If there was a problem visiting the node then the node will be nil and the incoming
+// error argument will describe the problem so the function can decide how to handle that error.
+type VisitFn func(Progress, ipld.Node, error) error
 
-// TransformFn is like a visitor that can also return a new Node to replace the visited one.
-type TransformFn func(Progress, ipld.Node) (ipld.Node, error)
+// TransformFn is like a visitor that can also return a new Node to replace the visited one. If there was a problem
+// visiting the node then the node will be nil and the incoming error argument will describe the problem so the
+// function can decide how to handle that error.
+type TransformFn func(Progress, ipld.Node, error) (ipld.Node, error)
 
-// AdvVisitFn is like VisitFn, but for use with AdvTraversal: it gets additional arguments describing *why* this node is visited.
-type AdvVisitFn func(Progress, ipld.Node, VisitReason) error
+// AdvVisitFn is like VisitFn, but for use with AdvTraversal: it gets additional arguments describing *why* this node is
+// visited.  If there was a problem visiting the node then the node will be nil and the incoming error argument will
+// describe the problem so the function can decide how to handle that error.
+type AdvVisitFn func(Progress, ipld.Node, error, VisitReason) error
 
 // VisitReason provides additional information to traversals using AdvVisitFn.
 type VisitReason byte

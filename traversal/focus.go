@@ -57,10 +57,7 @@ func FocusedTransform(n ipld.Node, p ipld.Path, fn TransformFn) (ipld.Node, erro
 // and thus continued nested uses of Walk and Focus will see the fully contextualized Path.
 func (prog Progress) Focus(n ipld.Node, p ipld.Path, fn VisitFn) error {
 	n, err := prog.get(n, p, true)
-	if err != nil {
-		return err
-	}
-	return fn(prog, n)
+	return fn(prog, n, err)
 }
 
 // Get is the equivalent of Focus, but returns the reached node (rather than invoking a callback at the target),

@@ -49,7 +49,7 @@ var (
 func TestWalkMatching(t *testing.T) {
 	ssb := builder.NewSelectorSpecBuilder(basicnode.Prototype__Any{})
 	t.Run("traverse selecting true should visit the root", func(t *testing.T) {
-		err := traversal.WalkMatching(basicnode.NewString("x"), selector.Matcher{}, func(prog traversal.Progress, n ipld.Node) error {
+		err := traversal.WalkMatching(basicnode.NewString("x"), selector.Matcher{}, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			Wish(t, n, ShouldEqual, basicnode.NewString("x"))
 			Wish(t, prog.Path.String(), ShouldEqual, ipld.Path{}.String())
 			return nil
@@ -57,7 +57,7 @@ func TestWalkMatching(t *testing.T) {
 		Wish(t, err, ShouldEqual, nil)
 	})
 	t.Run("traverse selecting true should visit only the root and no deeper", func(t *testing.T) {
-		err := traversal.WalkMatching(middleMapNode, selector.Matcher{}, func(prog traversal.Progress, n ipld.Node) error {
+		err := traversal.WalkMatching(middleMapNode, selector.Matcher{}, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			Wish(t, n, ShouldEqual, middleMapNode)
 			Wish(t, prog.Path.String(), ShouldEqual, ipld.Path{}.String())
 			return nil
@@ -72,7 +72,7 @@ func TestWalkMatching(t *testing.T) {
 		s, err := ss.Selector()
 		Require(t, err, ShouldEqual, nil)
 		var order int
-		err = traversal.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node) error {
+		err = traversal.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			switch order {
 			case 0:
 				Wish(t, n, ShouldEqual, basicnode.NewBool(true))
@@ -97,7 +97,7 @@ func TestWalkMatching(t *testing.T) {
 		s, err := ss.Selector()
 		Require(t, err, ShouldEqual, nil)
 		var order int
-		err = traversal.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node) error {
+		err = traversal.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			switch order {
 			case 0:
 				Wish(t, n, ShouldEqual, basicnode.NewBool(true))
@@ -128,7 +128,7 @@ func TestWalkMatching(t *testing.T) {
 					return basicnode.Prototype__Any{}, nil
 				},
 			},
-		}.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node) error {
+		}.WalkMatching(middleMapNode, s, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			switch order {
 			case 0:
 				Wish(t, n, ShouldEqual, middleMapNode)
@@ -174,7 +174,7 @@ func TestWalkMatching(t *testing.T) {
 					return basicnode.Prototype__Any{}, nil
 				},
 			},
-		}.WalkMatching(middleListNode, s, func(prog traversal.Progress, n ipld.Node) error {
+		}.WalkMatching(middleListNode, s, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			switch order {
 			case 0:
 				Wish(t, n, ShouldEqual, basicnode.NewString("alpha"))
@@ -219,7 +219,7 @@ func TestWalkMatching(t *testing.T) {
 					return basicnode.Prototype__Any{}, nil
 				},
 			},
-		}.WalkMatching(rootNode, s, func(prog traversal.Progress, n ipld.Node) error {
+		}.WalkMatching(rootNode, s, func(prog traversal.Progress, n ipld.Node, nerr error) error {
 			switch order {
 			case 0:
 				Wish(t, n, ShouldEqual, basicnode.NewString("alpha"))

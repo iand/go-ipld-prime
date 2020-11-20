@@ -17,7 +17,7 @@ func BenchmarkSpec_Walk_Map3StrInt(b *testing.B, np ipld.NodePrototype) {
 	var visitCountSanityCheck int
 	for i := 0; i < b.N; i++ {
 		visitCountSanityCheck = 0
-		traversal.WalkMatching(node, sel, func(tp traversal.Progress, n ipld.Node) error {
+		traversal.WalkMatching(node, sel, func(tp traversal.Progress, n ipld.Node, nerr error) error {
 			visitCountSanityCheck++ // this sanity check is sufficiently cheap to be worth it
 			return nil              // no need to do anything here; just care about exercising the walk internals.
 		})
@@ -38,7 +38,7 @@ func BenchmarkSpec_Walk_MapNStrMap3StrInt(b *testing.B, np ipld.NodePrototype) {
 			var visitCountSanityCheck int
 			for i := 0; i < b.N; i++ {
 				visitCountSanityCheck = 0
-				traversal.WalkMatching(node, sel, func(tp traversal.Progress, n ipld.Node) error {
+				traversal.WalkMatching(node, sel, func(tp traversal.Progress, n ipld.Node, nerr error) error {
 					visitCountSanityCheck++ // this sanity check is sufficiently cheap to be worth it
 					return nil              // no need to do anything here; just care about exercising the walk internals.
 				})

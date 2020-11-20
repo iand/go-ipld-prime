@@ -67,11 +67,11 @@ func WalkTransforming(n ipld.Node, s selector.Selector, fn TransformFn) (ipld.No
 //
 func (prog Progress) WalkMatching(n ipld.Node, s selector.Selector, fn VisitFn) error {
 	prog.init()
-	return prog.walkAdv(n, s, func(prog Progress, n ipld.Node, tr VisitReason) error {
+	return prog.walkAdv(n, nil, s, func(prog Progress, n ipld.Node, nerr error, tr VisitReason) error {
 		if tr != VisitReason_SelectionMatch {
 			return nil
 		}
-		return fn(prog, n)
+		return fn(prog, n, nerr)
 	})
 }
 
@@ -81,18 +81,21 @@ func (prog Progress) WalkMatching(n ipld.Node, s selector.Selector, fn VisitFn) 
 //
 func (prog Progress) WalkAdv(n ipld.Node, s selector.Selector, fn AdvVisitFn) error {
 	prog.init()
-	return prog.walkAdv(n, s, fn)
+	return prog.walkAdv(n, nil, s, fn)
 }
 
-func (prog Progress) walkAdv(n ipld.Node, s selector.Selector, fn AdvVisitFn) error {
+func (prog Progress) walkAdv(n ipld.Node, nerr error, s selector.Selector, fn AdvVisitFn) error {
 	if s.Decide(n) {
-		if err := fn(prog, n, VisitReason_SelectionMatch); err != nil {
+		if err := fn(prog, n, nerr, VisitReason_SelectionMatch); err != nil {
 			return err
 		}
 	} else {
-		if err := fn(prog, n, VisitReason_SelectionCandidate); err != nil {
+		if err := fn(prog, n, nerr, VisitReason_SelectionCandidate); err != nil {
 			return err
 		}
+	}
+	if n == nil {
+		return nil
 	}
 	nk := n.ReprKind()
 	switch nk {
@@ -105,7 +108,6 @@ func (prog Progress) walkAdv(n ipld.Node, s selector.Selector, fn AdvVisitFn) er
 		return prog.walkAdv_iterateAll(n, s, fn)
 	}
 	return prog.walkAdv_iterateSelective(n, attn, s, fn)
-
 }
 
 func (prog Progress) walkAdv_iterateAll(n ipld.Node, s selector.Selector, fn AdvVisitFn) error {
@@ -118,20 +120,20 @@ func (prog Progress) walkAdv_iterateAll(n ipld.Node, s selector.Selector, fn Adv
 		if sNext != nil {
 			progNext := prog
 			progNext.Path = prog.Path.AppendSegment(ps)
+			var verr error
 			if v.ReprKind() == ipld.ReprKind_Link {
 				lnk, _ := v.AsLink()
 				progNext.LastBlock.Path = progNext.Path
 				progNext.LastBlock.Link = lnk
-				v, err = progNext.loadLink(v, n)
-				if err != nil {
-					if _, ok := err.(SkipMe); ok {
+				v, verr = progNext.loadLink(v, n)
+				if verr != nil {
+					if _, ok := verr.(SkipMe); ok {
 						return nil
 					}
-					return err
 				}
 			}
 
-			err = progNext.walkAdv(v, sNext, fn)
+			err = progNext.walkAdv(v, verr, sNext, fn)
 			if err != nil {
 				return err
 			}
@@ -150,20 +152,20 @@ func (prog Progress) walkAdv_iterateSelective(n ipld.Node, attn []ipld.PathSegme
 		if sNext != nil {
 			progNext := prog
 			progNext.Path = prog.Path.AppendSegment(ps)
+			var verr error
 			if v.ReprKind() == ipld.ReprKind_Link {
 				lnk, _ := v.AsLink()
 				progNext.LastBlock.Path = progNext.Path
 				progNext.LastBlock.Link = lnk
-				v, err = progNext.loadLink(v, n)
-				if err != nil {
-					if _, ok := err.(SkipMe); ok {
+				v, verr = progNext.loadLink(v, n)
+				if verr != nil {
+					if _, ok := verr.(SkipMe); ok {
 						return nil
 					}
-					return err
 				}
 			}
 
-			err = progNext.walkAdv(v, sNext, fn)
+			err = progNext.walkAdv(v, verr, sNext, fn)
 			if err != nil {
 				return err
 			}
@@ -186,7 +188,7 @@ func (prog Progress) loadLink(v ipld.Node, parent ipld.Node) (ipld.Node, error) 
 	// Pick what in-memory format we will build.
 	np, err := prog.Cfg.LinkTargetNodePrototypeChooser(lnk, lnkCtx)
 	if err != nil {
-		return nil, fmt.Errorf("error traversing node at %q: could not load link %q: %s", prog.Path, lnk, err)
+		return nil, fmt.Errorf("error traversing node at %q: could not find prototype %q: %s", prog.Path, lnk, err)
 	}
 	nb := np.NewBuilder()
 	// Load link!
